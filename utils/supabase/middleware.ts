@@ -2,54 +2,39 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-    let supabaseResponse = NextResponse.next({ request });
+    const { pathname } = request.nextUrl;
+
+    // Exclude specific routes from authentication checks
+    if (
+        pathname.startsWith('/login') ||
+        pathname.startsWith('/auth') ||
+        pathname.startsWith('/api')
+    ) {
+        return NextResponse.next();
+    }
 
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log(request.cookies.getAll());
-    // Get cookies from the request
-    const accessToken = request.cookies.get('sb-access-token')?.value;
-    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
+    //console.log(request.cookies.getAll());
+    // Retrieve the user's session token from cookies
+    const accessToken = request.cookies.get('sb-vxyxbgiwnqkarvucweje-auth-token')?.value;
 
-    if (!accessToken || !refreshToken) {
+    if (!accessToken) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         return NextResponse.redirect(url);
     }
 
-    // Set the session manually
-    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    // Verify the user session with the access token
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
-    // Fetch the user session
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/webhook')
-    ) {
+    if (!user) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         return NextResponse.redirect(url);
     }
 
-    // Refresh session tokens if needed
-    const updatedSession = await supabase.auth.getSession();
-    if (updatedSession.data.session) {
-        const { access_token, refresh_token } = updatedSession.data.session;
-        supabaseResponse.cookies.set('sb-access-token', access_token, {
-            httpOnly: true,
-            secure: true,
-        });
-        supabaseResponse.cookies.set('sb-refresh-token', refresh_token, {
-            httpOnly: true,
-            secure: true,
-        });
-    }
-
-    return supabaseResponse;
+    // Proceed to the next middleware or route
+    return NextResponse.next();
 }
