@@ -2,6 +2,17 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+
+    // Exclude specific routes from authentication checks
+    if (
+        pathname.startsWith('/login') ||
+        pathname.startsWith('/auth') ||
+        pathname.startsWith('/api')
+    ) {
+        return NextResponse.next();
+    }
+
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -15,7 +26,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // Pass the access token as a header for authorization
+    // Verify the user session with the access token
     const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
     if (!user) {
@@ -26,5 +37,4 @@ export async function updateSession(request: NextRequest) {
 
     // Proceed to the next middleware or route
     return NextResponse.next();
-    
 }
