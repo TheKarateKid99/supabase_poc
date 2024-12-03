@@ -26,4 +26,5 @@ export async function updateSession(request: NextRequest) {
 
     // Proceed to the next middleware or route
     return NextResponse.next();
+    
 }
