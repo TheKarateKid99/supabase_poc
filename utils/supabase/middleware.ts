@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
     if (
         pathname.startsWith('/login') ||
         pathname.startsWith('/auth') ||
-        pathname.startsWith('/api')
+        pathname.startsWith('/webhook')
     ) {
         return NextResponse.next();
     }
@@ -16,7 +16,6 @@ export async function updateSession(request: NextRequest) {
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    //console.log(request.cookies.getAll());
     // Retrieve the user's session token from cookies
     const accessToken = request.cookies.get('sb-vxyxbgiwnqkarvucweje-auth-token')?.value;
     //console.log(accessToken);
